@@ -9,7 +9,7 @@
     body {
       font-family: system-ui, -apple-system, sans-serif;
       padding: 16px;
-      padding-top: 70px; /* espacio por la barra superior */
+      padding-top: 70px;
       font-size: 14px;
       background: linear-gradient(135deg, #e0e7ff, #f3f4f6);
     }
@@ -20,7 +20,6 @@
       margin: 10px 0 20px;
     }
 
-    /* 🔥 BARRA SUPERIOR FIJA */
     #resultado {
       position: fixed;
       top: 0;
@@ -41,7 +40,6 @@
 
     .item {
       background: white;
-      border: none;
       padding: 16px;
       margin-bottom: 14px;
       border-radius: 12px;
@@ -56,13 +54,6 @@
     .mejor {
       background: #dcfce7;
       border-left: 5px solid #22c55e;
-      animation: glow 1.2s ease-in-out;
-    }
-
-    @keyframes glow {
-      0% { box-shadow: 0 0 0 rgba(34,197,94,0); }
-      50% { box-shadow: 0 0 20px rgba(34,197,94,0.6); }
-      100% { box-shadow: 0 0 0 rgba(34,197,94,0); }
     }
 
     input {
@@ -90,7 +81,6 @@
       background: #3b82f6;
       color: white;
       cursor: pointer;
-      transition: 0.2s;
     }
 
     button:hover {
@@ -106,7 +96,6 @@
 
 <body>
 
-<!-- 🔥 RESULTADO ARRIBA DE TODO -->
 <div id="resultado">Ingresá datos para comparar</div>
 
 <h2>Comparador de precios</h2>
@@ -114,7 +103,7 @@
 <div id="items"></div>
 
 <button onclick="agregar()">Agregar opciones</button>
-<button onclick="calcular()">Cual es el mejor?</button>
+<button onclick="calcular()">¿Cuál es el mejor?</button>
 <button onclick="resetear()">Comenzar de nuevo</button>
 
 <script>
@@ -126,10 +115,10 @@ function agregar() {
     Precio:
     <input type="number" class="precio" min="0" step="any">
 
-    Cantidad (4 botellas, 1 caja, 12 rollos):
+    Cantidad:
     <input type="number" class="cantidad" min="0" step="any">
 
-    Unidades (1.5 lts, 12 sobres, 30 mts):
+    Unidades:
     <input type="number" class="unidades" min="0" step="any">
 
     <p class="resultadoItem">Costo unitario: -</p>
@@ -156,7 +145,10 @@ function calcular() {
   let mejor = Infinity;
   let mejorIndex = -1;
 
-  items.forEach((item, i) => {
+  let costos = [];
+
+  // 1. calcular costos
+  items.forEach((item) => {
     let precio = parseFloat(item.querySelector(".precio").value);
     let cantidad = parseFloat(item.querySelector(".cantidad").value);
     let unidades = parseFloat(item.querySelector(".unidades").value);
@@ -168,24 +160,44 @@ function calcular() {
 
     if (esNumeroValido(precio) && esNumeroValido(cantidad) && esNumeroValido(unidades) && total > 0) {
       let costo = precio / total;
-      resultadoTexto.innerText = "Costo unitario: " + costo.toFixed(2);
+
+      costos.push(costo);
+
+      resultadoTexto.innerText = "Costo unitario: $" + costo.toFixed(2);
 
       if (costo < mejor) {
         mejor = costo;
-        mejorIndex = i;
       }
     } else {
+      costos.push(null);
       resultadoTexto.innerText = "Ingresá números válidos";
     }
   });
 
+  // 2. encontrar mejor index
+  costos.forEach((costo, i) => {
+    if (costo === mejor) mejorIndex = i;
+  });
+
+  // 3. mostrar diferencias
+  items.forEach((item, i) => {
+    let costo = costos[i];
+
+    if (costo !== null) {
+      let texto = item.querySelector(".resultadoItem");
+
+      if (i === mejorIndex) {
+        item.classList.add("mejor");
+        texto.innerText += " (MEJOR OPCIÓN)";
+      } else {
+        let diff = ((costo - mejor) / mejor) * 100;
+        texto.innerText += " → +" + diff.toFixed(1) + "% más caro";
+      }
+    }
+  });
+
+  // 4. resultado global
   if (mejorIndex >= 0) {
-    const mejorItem = items[mejorIndex];
-
-    mejorItem.classList.remove("mejor");
-    void mejorItem.offsetWidth;
-    mejorItem.classList.add("mejor");
-
     document.getElementById("resultado").innerText =
       "Mejor opción: #" + (mejorIndex + 1) +
       " ($" + mejor.toFixed(2) + " por unidad)";
